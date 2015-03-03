@@ -1,4 +1,5 @@
 import socketserver
+import argparse
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 	"""
@@ -17,12 +18,16 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 		# just send back the same data, but upper-cased
 		self.request.sendall(self.data.upper())
 
-HOST, PORT = "localhost", 9999
+parser = argparse.ArgumentParser()
+parser.add_argument('-port', dest='port', type=int, required=False, default=9999)
+args = parser.parse_args()
+		
+host = "localhost"
 
 # Create the server, binding to HOST:PORT
-server = socketserver.TCPServer((HOST, PORT), MyTCPHandler)
+server = socketserver.TCPServer((host, args.port), MyTCPHandler)
 
 # Activate the server; this will keep running until you
 # interrupt the program with Ctrl-C
-print ('Server running on ' + str(HOST) + ':' + str(PORT))
+print ('Server running on ' + str(host) + ':' + str(args.port))
 server.serve_forever()
