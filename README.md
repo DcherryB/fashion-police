@@ -1,7 +1,7 @@
 # fashion-police
 BitTorrent but not BitTorrent
 # Tracker protocol
-Command: post
+Command: post.
 Argument: The torrent file (JSON)
 retrun: success or failure, failure may be due to the torrent already existing
 
