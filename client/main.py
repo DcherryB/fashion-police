@@ -31,12 +31,12 @@ except:
 finally:
 	sock.close()
 
-info = fileinfo.read_file(args.path, args.name)
-print(info)
+torrent = fileinfo.read_file(args.path, args.name)
+print(torrent)
 
 validchars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
-filename = ''.join(c for c in args.name if c in validchars) + '.' + info['extension']
+filename = ''.join(c for c in args.name if c in validchars) + '.' + torrent.extension
 
 f = open(filename + '.fashion', 'w')
-f.write(json.dumps(info))
+f.write(torrent.to_JSON())
 f.close()
