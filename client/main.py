@@ -4,6 +4,21 @@ import fileinfo
 import json
 import argparse
 
+class Message:
+	def __init__(self):
+		self.command = ""
+		self.args = None
+		
+	def __str__(self):
+		s = str("Response Information:\n"
+				"	Command: {0}\n"
+				"	Args: {1}\n").format(self.command,
+										  self.args)
+		return s
+		
+	def to_JSON(self):
+		return json.dumps(self, default=lambda o: o.__dict__, indent = 4)
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-host', dest='host', type=str, required=False, default='localhost')
 parser.add_argument('-port', dest='port', type=int, required=False, default=9999)
@@ -18,13 +33,18 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
 	# Connect to server and send data
 	sock.connect((args.host, args.port))
-	sock.sendall(bytes(args.data + "\n", 'UTF-8'))
+	
+	message = Message()
+	message.command = "test"
+	message.args = args.data
+	
+	sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 
 	# Receive data from the server and shut down
 	received = sock.recv(1024)
 
 	#print stuff
-	print ("Sent:     {}".format(args.data))
+	print ("Sent:     {}".format(message.to_JSON()))
 	print ("Received: {}".format(received))
 except:
 	print('Couldn\'t connect to server.')

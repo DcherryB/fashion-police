@@ -7,11 +7,11 @@ import json
 CHUNK_SIZE = 1024 * 256
 
 class torrent_file:
-	def __init__(self, name, ext, size, full, chunks):
+	def __init__(self, name, ext, size, chunksize, full, chunks):
 		self.name = name
 		self.extension = ext
 		self.size = size
-		self.chunksize = CHUNK_SIZE
+		self.chunksize = chunksize
 		self.full_hash = full
 		self.chunk_hashes = chunks
 	
@@ -53,4 +53,4 @@ def read_file (path, name):
 
 	f.close()
 
-	return torrent_file(name, path.split('.')[-1], fsize, fullhash.hexdigest(), hashes)
+	return torrent_file(name, path.split('.')[-1], fsize, CHUNK_SIZE, fullhash.hexdigest(), hashes)
