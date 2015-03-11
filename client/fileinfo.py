@@ -31,7 +31,7 @@ class torrent_file:
 		return s
 		
 	def to_JSON(self):
-		return json.dumps(self, default=lambda o: o.__dict__, indent = 4)
+		return json.dumps(self, default=lambda o: o.__dict__)
 
 def read_file (path, name):
 	fsize = os.path.getsize(path)

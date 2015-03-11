@@ -3,6 +3,7 @@ import argparse
 import json
 from tracker import Tracker
 from tracker import Response
+from tracker import Torrent
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 	"""
@@ -17,11 +18,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
 	def handle(self):
 		while True:
-			recieved = (self.request.recv(1024).strip()).decode()
-			if recieved == "":
+			received = (self.request.recv(1024).strip()).decode()
+			if received == "":
 				break
 			
-			print ("{0} wrote: {1}".format(self.client_address[0], recieved))
+			print ("{0} wrote: {1}".format(self.client_address[0], received))
 			
 			data = {}
 			command = ""
@@ -30,7 +31,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			response = Response()
 			
 			try:
-				data = json.loads(recieved)
+				data = json.loads(received)
 				command = data["command"]
 				args = data["args"]
 			except:
@@ -39,7 +40,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				response.value = "invalid"
 			
 			if command == "post":
-				response = MyTCPHandler.tracker.post(args) 
+				response = MyTCPHandler.tracker.post(Torrent(args))
+			elif command == 'query':
+				response = MyTCPHandler.tracker.query(args)
 			else:
 				response.statusCode = False
 				response.value = "Unknown Command"

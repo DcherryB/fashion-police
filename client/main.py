@@ -92,7 +92,21 @@ while(True):
 			print ("Torrent unsuccessfully sent to tracker, reason: " + response["value"])
 	
 	elif val == 1:
-		print ("Not Implemented")
+		message  = Message()
+		message.command = "query"
+		message.args = {}
+		
+		sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
+		
+		#Receive data from the server
+		received = sock.recv(1024)
+
+		response = json.loads(received.decode())
+		if response["statusCode"] == True:
+			print ("Query Results:")
+			print (response['value'])
+		else:
+			print ("Your query was shit, friend")
 	elif val == 2:
 		print ("Not Implemented")
 	elif val == 3:

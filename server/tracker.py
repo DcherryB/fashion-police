@@ -13,15 +13,17 @@ class Response:
 		return s
 		
 	def to_JSON(self):
-		return json.dumps(self, default=lambda o: o.__dict__, indent = 4)
+		return json.dumps(self, default=lambda o: o.__dict__)
 
 class Tracker:
 	def __init__(self):
-		self.torrents = []
+		self.torrents = {}
 	
 	def post(self, torrent):
 		exists = False
-		for t in self.torrents:
+		t = None
+		for key in self.torrents:
+			t = self.torrents[key]
 			if t["name"] == torrent["name"]:
 				exists = True
 				break
@@ -30,8 +32,40 @@ class Tracker:
 		if exists == True:
 			response = Response()
 			response.statusCode = False
-			response.value = "Torrent name already in use"
+			response.value = "File already exists as " + t.info["name"]
 		else:
-			self.torrents.append(torrent)
+			self.torrents[torrent.info["full_hash"]] = torrent
 			response = Response()
 		return response
+
+	def query(self, args):
+		name = ''
+		if 'name' in args:
+			name = args['name']
+
+		results = []
+		for key in self.torrents:
+			t = self.torrents[key]
+			if name == '' or name in t.info['name']:
+				results.append(t.preview())
+
+		response = Response()
+		response.statusCode = True
+		response.value = results
+
+		return response
+
+class Torrent:
+	def __init__(self, info):
+		self.info = info
+		self.peers = {}
+
+	def __str__(self):
+		s = str("Torrent:\n"+json.dumps(self.info))
+		return s
+
+	def preview(self):
+		ret = {}
+		for prop in ['name', 'extension', 'size', 'full_hash']:
+			ret[prop] = self.info[prop]
+		return ret
