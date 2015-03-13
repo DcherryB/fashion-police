@@ -19,12 +19,12 @@ class Tracker:
 	def __init__(self):
 		self.torrents = {}
 	
-	def post(self, torrent):
+	def post(self, info):
 		exists = False
 		t = None
 		for key in self.torrents:
 			t = self.torrents[key]
-			if t["name"] == torrent["name"]:
+			if t.info["name"] == info["name"]:
 				exists = True
 				break
 		
@@ -34,7 +34,8 @@ class Tracker:
 			response.statusCode = False
 			response.value = "File already exists as " + t.info["name"]
 		else:
-			self.torrents[torrent.info["full_hash"]] = torrent
+			torrent = Torrent(info)
+			self.torrents[info["full_hash"]] = torrent
 			response = Response()
 		return response
 

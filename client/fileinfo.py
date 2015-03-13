@@ -5,8 +5,41 @@ import hashlib
 import json
 
 CHUNK_SIZE = 1024 * 256
+FILE_DIR = 'file'
+INFO_DIR = 'file/info'
+STATUS_DIR = 'file/status'
 
-class torrent_file:
+
+class Torrent:
+	def __init__(self, info):
+		self.info = info
+		self.status = get_torrent_status(info)
+
+	#this should only be called once over a torrent's lifetime
+	def save_info(self):
+		if not os.path.exists(FILE_DIR):
+			os.makedirs(FILE_DIR)
+		if not os.path.exists(INFO_DIR):
+			os.makedirs(INFO_DIR)
+
+		filename = generate_filename(self.info) + '.fashion'
+		filename = unique_filename(INFO_DIR + '/' + filename)
+
+		f = open(filename, 'w')
+		f.write(self.info.to_JSON())
+		f.close()
+
+	def save_status(self):
+		if not os.path.exists(STATUS_DIR):
+			os.makedirs(STATUS_DIR)
+
+		filename = STATUS_DIR + '/' + self.info.full_hash + '.status'
+		f = open(filename, 'w')
+		#f.write(self.status.to_JSON())
+		f.write(json.dumps(self.status))
+		f.close()
+
+class Torrent_Info:
 	def __init__(self, name, ext, size, chunksize, full, chunks):
 		self.name = name
 		self.extension = ext
@@ -33,7 +66,37 @@ class torrent_file:
 	def to_JSON(self):
 		return json.dumps(self, default=lambda o: o.__dict__)
 
-def read_file (path, name):
+
+'''
+If similarly named files already exist, appends a number to avoid collision.
+	path: path to the file you're attempting to save
+'''
+def unique_filename (path):
+	n = 1
+	p = path
+	while (os.path.isfile(p)):
+		p = path + '(' + str(n) + ')'
+		n += 1
+	return p
+
+'''
+Generates a friendly file name based on the torrent's name.
+	info: torrent info
+'''
+def generate_filename (info):
+	validchars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
+	filename = ''.join(c for c in info.name if c in validchars)
+	if (filename == ''):
+		filename = 'file'
+	filename += '.' + info.extension
+	return filename
+
+'''
+Generates the .fashion (torrent) info for a file
+	path: path to the file to be read
+	name: desired name for this torrent
+'''
+def generate_torrent_info (path, name):
 	fsize = os.path.getsize(path)
 	numchunks = math.ceil(fsize / CHUNK_SIZE)
 	f = open(path, 'rb')
@@ -53,4 +116,20 @@ def read_file (path, name):
 
 	f.close()
 
-	return torrent_file(name, path.split('.')[-1], fsize, CHUNK_SIZE, fullhash.hexdigest(), hashes)
+	return Torrent_Info(name, path.split('.')[-1], fsize, CHUNK_SIZE, fullhash.hexdigest(), hashes)
+	
+
+'''
+Find the local status of the torrent, based on the file's full hash
+	info: torrent info
+'''
+def get_torrent_status(info):
+	f = None
+	try:
+		f = open(STATUS_DIR + '/' + info.full_hash + '.status', 'r')
+		return json.loads(f.read())
+	except:
+		#TODO: add chunk status etc
+		return {
+			'filename':unique_filename(FILE_DIR + '/' + generate_filename(info))
+		}

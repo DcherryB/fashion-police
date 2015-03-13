@@ -29,6 +29,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			args = None
 			
 			response = Response()
+
+			try:
+				data = json.loads(received)
+			except:
+				print('NO NO NO')
 			
 			try:
 				data = json.loads(received)
@@ -40,7 +45,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				response.value = "invalid"
 			
 			if command == "post":
-				response = MyTCPHandler.tracker.post(Torrent(args))
+				response = MyTCPHandler.tracker.post(args)
 			elif command == 'query':
 				response = MyTCPHandler.tracker.query(args)
 			else:

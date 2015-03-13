@@ -61,12 +61,12 @@ while(True):
 		while len(name) == 0:
 			name = input(":")
 
-		torrent = fileinfo.read_file(path, name)
-		print(torrent)
+		info = fileinfo.generate_torrent_info(path, name)
+		print(info)
 			
 		message  = Message()
 		message.command = "post"
-		message.args = torrent
+		message.args = info
 		
 		sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 		
@@ -81,13 +81,9 @@ while(True):
 		if response["statusCode"] == True:
 			print ("Torrent successfully created and sent to tracker")
 		
-			#save torrent to file
-			validchars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
-			filename = ''.join(c for c in name if c in validchars) + '.' + torrent.extension
-
-			f = open(filename + '.fashion', 'w')
-			f.write(torrent.to_JSON())
-			f.close()
+			torrent = fileinfo.Torrent(info)
+			torrent.save_info()
+			torrent.save_status()
 		else:
 			print ("Torrent unsuccessfully sent to tracker, reason: " + response["value"])
 	
