@@ -7,9 +7,9 @@ class Response:
 		
 	def __str__(self):
 		s = str("Response Information:\n"
-				"	Status: {0}\n"
-				"	Value: {1}\n").format(self.statusCode,
-										  self.value)
+			"	Status: {0}\n"
+			"	Value: {1}\n").format(self.statusCode,
+						      self.value)
 		return s
 		
 	def to_JSON(self):

@@ -55,16 +55,23 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			# just send back the same data
 			self.request.sendall(bytes(response.to_JSON(), 'UTF-8'))
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-port', dest='port', type=int, required=False, default=9999)
-args = parser.parse_args()
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+	pass
+
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-port', dest='port', type=int, required=False, default=9999)
+	args = parser.parse_args()
 		
-host = "localhost"
+	host = "localhost"
 
-# Create the server, binding to HOST:PORT
-server = socketserver.TCPServer((host, args.port), MyTCPHandler)
+	# Create the server, binding to HOST:PORT
+	server = ThreadedTCPServer((host, args.port), MyTCPHandler)
 
-# Activate the server; this will keep running until you
-# interrupt the program with Ctrl-C
-print ('Server running on ' + str(host) + ':' + str(args.port))
-server.serve_forever()
+	# Activate the server; this will keep running until you
+	# interrupt the program with Ctrl-C
+	print ('Server running on ' + str(host) + ':' + str(args.port))
+	server.serve_forever()
+
+if __name__ == "__main__":
+	main()
