@@ -56,6 +56,22 @@ class Tracker:
 
 		return response
 
+	def get(self, args):
+		name = args
+		for key in self.torrents:
+			t = self.torrents[key]
+			if t.info["name"] == name:
+				response = Response()
+				response.statusCode = True
+				response.value = t.info
+				return response
+
+		response = Response()
+		response.statusCode = False
+		return response
+		
+		
+
 class Torrent:
 	def __init__(self, info):
 		self.info = info

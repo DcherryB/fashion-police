@@ -93,6 +93,24 @@ def main():
 			message  = Message()
 			message.command = "query"
 			message.args = {}
+
+			awnser = ""
+			wait = True
+			print ("Would you like to use a search phrase? (y/n):")
+			while wait == True:
+				awnser = input(":")
+				awnser = awnser.lower()
+				if awnser == "y" or awnser == "n":
+					wait = False
+				else:
+					print ("Please enter y or n")
+
+			if awnser == "y":
+				print ("Enter the search phrase:")
+				phrase = ""
+				while len(phrase) == 0:
+					phrase = input(":")
+				message.args["name"] = phrase.strip()
 		
 			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 		
@@ -106,7 +124,28 @@ def main():
 			else:
 				print ("Your query was shit, friend")
 		elif val == 2:
-			print ("Not Implemented")
+			name = ""
+			print ("Enter the torrent's name:")
+			while len(name) == 0:
+				name = input(":")
+
+			message = Message()
+			message.command = "get"
+			message.args = name
+
+			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
+
+			#Receive data from the server
+			received = sock.recv(1024)
+
+			response = json.loads(received.decode())
+			if response["statusCode"] == True:
+				print ("Torrent successfully recieved from tracker")
+				print (response['value'])
+			else:
+				print ("Unable to find torrent on tracker")
+
+			
 		elif val == 3:
 			break
 		
