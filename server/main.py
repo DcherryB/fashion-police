@@ -1,4 +1,5 @@
 import socketserver
+import socket
 import argparse
 import json
 from tracker import Tracker
@@ -65,7 +66,7 @@ def main():
 	parser.add_argument('-port', dest='port', type=int, required=False, default=9999)
 	args = parser.parse_args()
 		
-	host = "localhost"
+	host = socket.gethostbyname(socket.gethostname())
 
 	# Create the server, binding to HOST:PORT
 	server = ThreadedTCPServer((host, args.port), MyTCPHandler)
