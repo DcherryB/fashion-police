@@ -6,7 +6,7 @@ from tracker import Tracker
 from tracker import Response
 from tracker import Torrent
 
-class MyTCPHandler(socketserver.BaseRequestHandler):
+class ServerTCPHandler(socketserver.BaseRequestHandler):
 	"""
 	The RequestHandler class for our server.
 
@@ -69,7 +69,7 @@ def main():
 	host = socket.gethostbyname(socket.gethostname())
 
 	# Create the server, binding to HOST:PORT
-	server = ThreadedTCPServer((host, args.port), MyTCPHandler)
+	server = ThreadedTCPServer((host, args.port), ServerTCPHandler)
 
 	# Activate the server; this will keep running until you
 	# interrupt the program with Ctrl-C

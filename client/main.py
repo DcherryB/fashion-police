@@ -3,6 +3,7 @@ import sys
 import fileinfo
 import json
 import argparse
+from client import Client
 
 class Message:
 	def __init__(self):
@@ -21,8 +22,9 @@ class Message:
 
 def main():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-host', dest='host', type=str, required=False, default='localhost')
-	parser.add_argument('-port', dest='port', type=int, required=False, default=9999)
+	parser.add_argument('-I', dest='serverIP', type=str, required=False, default='127.0.1.1')
+	parser.add_argument('-P', dest='serverPort', type=int, required=False, default=9999)
+	parser.add_argument('-p', dest='port', type=int, required=False, default=9998)
 	args = parser.parse_args()
 
 	# Create a socket (SOCK_STREAM means a TCP socket)
@@ -30,10 +32,12 @@ def main():
 
 	try:
 		# Connect to server
-		sock.connect((args.host, args.port))
+		sock.connect((args.serverIP, args.serverPort))
 	except:
 		print('Couldn\'t connect to server.')
 		return
+
+	client = Client(args.port)
 
 	while(True):
 		
