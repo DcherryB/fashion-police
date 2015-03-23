@@ -46,11 +46,15 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 				response.value = "invalid"
 			
 			if command == "post":
-				response = MyTCPHandler.tracker.post(args)
+				response = ServerTCPHandler.tracker.post(args)
 			elif command == 'query':
-				response = MyTCPHandler.tracker.query(args)
+				response = ServerTCPHandler.tracker.query(args)
 			elif command == 'get':
-				response = MyTCPHandler.tracker.get(args)
+				response = ServerTCPHandler.tracker.get(args)
+			elif command == 'peer':
+				response = ServerTCPHandler.tracker.peer(args)
+			elif command == 'upload':
+				response = ServerTCPHandler.tracker.upload(args)
 			else:
 				response.statusCode = False
 				response.value = "Unknown Command"
