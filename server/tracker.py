@@ -92,8 +92,23 @@ class Tracker:
 		response.statusCode = False
 		return response
 		
-	def upload(self, args):
-		pass
+	def upload(self, args, addr):
+		name = args
+		for key in self.torrents:
+			t = self.torrents[key]
+			if t.info["name"] == name:
+				newPeer = {}
+				newPeer["ip"] = addr[0]
+				newPeer["port"] = addr[1]
+				t.peers.append(newPeer)
+
+				response = Response()
+				response.statusCode = True
+				return response
+		
+		response = Response()
+		response.statusCode = False
+		return response
 
 class Torrent:
 	def __init__(self, info):

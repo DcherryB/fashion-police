@@ -22,7 +22,7 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 			received = (self.request.recv(1024).strip()).decode()
 			if received == "":
 				break
-			
+
 			print ("{0} wrote: {1}".format(self.client_address[0], received))
 			
 			data = {}
@@ -47,6 +47,7 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 			
 			if command == "post":
 				response = ServerTCPHandler.tracker.post(args)
+				ServerTCPHandler.tracker.upload(args["name"], self.client_address)
 			elif command == 'query':
 				response = ServerTCPHandler.tracker.query(args)
 			elif command == 'get':
@@ -54,7 +55,7 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 			elif command == 'peer':
 				response = ServerTCPHandler.tracker.peer(args)
 			elif command == 'upload':
-				response = ServerTCPHandler.tracker.upload(args)
+				pass #not sure how to get correct ip/port information in here
 			else:
 				response.statusCode = False
 				response.value = "Unknown Command"

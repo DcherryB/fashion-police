@@ -147,6 +147,11 @@ def main():
 			if response["statusCode"] == True:
 				print ("Torrent successfully recieved from tracker")
 				print (response['value'])
+
+				if client.addTorrent(response['value']):
+					print ("File download started")
+				else:
+					print ("Unable to start file download, identical torrent already in client")
 			else:
 				print ("Unable to find torrent on tracker")
 
