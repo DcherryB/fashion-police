@@ -55,4 +55,4 @@ def runServer():
 
 @hosts("slice352.pcvm1-1.instageni.iu.edu")
 def runClient():
-	run('python3 client/main.py -host "10.7.1.36"')
+	run('python3 client/main.py -I 10.7.1.36')

@@ -5,6 +5,8 @@ import json
 import argparse
 from client import Client
 
+BUF_SIZE = 1024
+
 class Message:
 	def __init__(self):
 		self.command = ""
@@ -77,7 +79,7 @@ def main():
 			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 		
 			#Receive data from the server
-			received = sock.recv(1024)
+			received = sock.recv(BUF_SIZE)
 		
 			#print stuff
 			print ("Sent:     {}".format(message.to_JSON()))
@@ -98,18 +100,18 @@ def main():
 			message.command = "query"
 			message.args = {}
 
-			awnser = ""
+			answer = ""
 			wait = True
-			print ("Would you like to use a search phrase? (y/n):")
+			print ("Would you like to use a search phrase? (y/n): ")
 			while wait == True:
-				awnser = input(":")
-				awnser = awnser.lower()
-				if awnser == "y" or awnser == "n":
+				answer = input(":")
+				answer = awnser.lower()
+				if answer == "y" or awnser == "n":
 					wait = False
 				else:
 					print ("Please enter y or n")
 
-			if awnser == "y":
+			if answer == "y":
 				print ("Enter the search phrase:")
 				phrase = ""
 				while len(phrase) == 0:
@@ -119,7 +121,7 @@ def main():
 			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 		
 			#Receive data from the server
-			received = sock.recv(1024)
+			received = sock.recv(BUF_SIZE)
 
 			response = json.loads(received.decode())
 			if response["statusCode"] == True:
@@ -129,7 +131,7 @@ def main():
 				print ("Your query was shit, friend")
 		elif val == 2:
 			name = ""
-			print ("Enter the torrent's name:")
+			print ("Enter the torrent's name: ")
 			while len(name) == 0:
 				name = input(":")
 
@@ -140,7 +142,7 @@ def main():
 			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 
 			#Receive data from the server
-			received = sock.recv(1024)
+			received = sock.recv(BUF_SIZE)
 
 			response = json.loads(received.decode())
 			if response["statusCode"] == True:
@@ -151,7 +153,25 @@ def main():
 
 			
 		elif val == 3:
-			break
+			name = ''
+			print ("Enter the torrent's name: ")
+			while len(name) == 0:
+				name = input(':')
+
+			message = Message()
+			message.command = 'get'
+			message.args = name
+
+			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
+
+			received = sock.recv(BUF_SIZE)
+			
+			response = json.loads(received.decode())
+
+			if response['statusCode'] == True:
+				torrent = response['value']
+
+			#Call the peers in torrent
 		
 		print ()
 	
