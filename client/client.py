@@ -52,3 +52,25 @@ class Client:
 		thread = threading.Thread(target=server.serve_forever)
 		thread.daemon = True
 		thread.start()
+
+		self.torrents = []
+
+	def addTorrent(self, info):
+		for torrent in self.torrents:
+			if info["name"] == torrent.info["name"]:
+				return False
+
+		newTorrent = TorrentInstance(info)
+		self.torrents.append(newTorrent)
+		thread = threading.Thread(target=newTorrent.run)
+		thread.daemon = True
+		thread.start()
+		return True
+
+class TorrentInstance:
+	def __init__(self, info):
+		self.info = info
+
+	def run(self):
+		pass
+

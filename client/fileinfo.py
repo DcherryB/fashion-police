@@ -72,12 +72,18 @@ If similarly named files already exist, appends a number to avoid collision.
 	path: path to the file you're attempting to save
 '''
 def unique_filename (path):
-	n = 1
+	n = 2
 	p = path
-	while (os.path.isfile(p)):
-		p = path + '(' + str(n) + ')'
+	ext = ''
+	if '.' in path:
+		ext = '.'+path.split('.')[-1]
+		p = path[:-len(ext)]
+
+	p2 = p
+	while (os.path.isfile(p2+ext)):
+		p2 = p + '(' + str(n) + ')'
 		n += 1
-	return p
+	return p2+ext
 
 '''
 Generates a friendly file name based on the torrent's name.

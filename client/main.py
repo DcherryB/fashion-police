@@ -47,13 +47,14 @@ def main():
 		print ("0) Create a Torrent")
 		print ("1) Query Torrents")
 		print ("2) Download a torrent")
-		print ("3) Quit")
+		print ("3) Lookup peers (debug purposes)")
+		print ("4) Quit")
 	
 		val = -1
 		while val < 0:
 			try:
 				x = int(input(":"))
-				if x >= 0 and x <= 3:
+				if x >= 0 and x <= 4:
 					val = x
 			except:
 				print ("Invalid Integer")
@@ -148,30 +149,39 @@ def main():
 			if response["statusCode"] == True:
 				print ("Torrent successfully recieved from tracker")
 				print (response['value'])
+
+				if client.addTorrent(response['value']):
+					print ("File download started")
+				else:
+					print ("Unable to start file download, identical torrent already in client")
 			else:
 				print ("Unable to find torrent on tracker")
 
-			
 		elif val == 3:
-			name = ''
-			print ("Enter the torrent's name: ")
+			name = ""
+			print ("Enter the torrent's name:")
 			while len(name) == 0:
-				name = input(':')
+				name = input(":")
 
 			message = Message()
-			message.command = 'get'
+			message.command = "peer"
+
 			message.args = name
 
 			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 
-			received = sock.recv(BUF_SIZE)
-			
+			#Receive data from the server
+			received = sock.recv(1024)
+
 			response = json.loads(received.decode())
-
-			if response['statusCode'] == True:
-				torrent = response['value']
-
-			#Call the peers in torrent
+			if response["statusCode"] == True:
+				print ("Peers successfully recieved from tracker")
+				print (response['value'])
+			else:
+				print ("Unable to find torrent on tracker")
+			
+		else:
+			break
 		
 		print ()
 	
