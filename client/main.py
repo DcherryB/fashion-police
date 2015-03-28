@@ -40,6 +40,7 @@ def main():
 		return
 
 	client = Client(args.port)
+	clientAddr = (socket.gethostbyname(socket.gethostname()),args.port)
 
 	while(True):
 		
@@ -75,7 +76,7 @@ def main():
 			
 			message  = Message()
 			message.command = "post"
-			message.args = info
+			message.args = (info,clientAddr)
 		
 			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 		
@@ -106,8 +107,8 @@ def main():
 			print ("Would you like to use a search phrase? (y/n): ")
 			while wait == True:
 				answer = input(":")
-				answer = awnser.lower()
-				if answer == "y" or awnser == "n":
+				answer = answer.lower()
+				if answer == "y" or answer == "n":
 					wait = False
 				else:
 					print ("Please enter y or n")

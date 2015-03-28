@@ -71,7 +71,7 @@ class Tracker:
 			if t.info["name"] == name:
 				response = Response()
 				response.statusCode = True
-				response.value = t.info
+				response.value = (t.info, t.peers)
 				return response
 
 		response = Response()

@@ -46,8 +46,8 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 				response.value = "invalid"
 			
 			if command == "post":
-				response = ServerTCPHandler.tracker.post(args)
-				ServerTCPHandler.tracker.upload(args["name"], self.client_address)
+				response = ServerTCPHandler.tracker.post(args[0])
+				ServerTCPHandler.tracker.upload(args[0]["name"], args[1])
 
 			elif command == 'query':
 				response = ServerTCPHandler.tracker.query(args)
