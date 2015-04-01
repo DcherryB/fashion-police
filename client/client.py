@@ -3,6 +3,7 @@ import socket
 import json
 import threading
 import os
+import hashlib
 from math import ceil
 
 BUFFER_SIZE = 1024
@@ -41,10 +42,10 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 
 	def handle(self):
 		while True:
-			request = self.request.recvfrom(1024)
+			request = self.request.recvfrom(BUFFER_SIZE)
 			received = request[0].strip().decode()
 			addr = request[1]
-			if received == "":
+			if received == b'':
 				break
 			
 			print ("{0} wrote: {1}".format(self.client_address[0], received))
@@ -72,6 +73,9 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 				f.seek(info['chunksize']*args['startChunk'])
 				while readTotal != info['chunksize']:
 					readBuf = f.read(BUFFER_SIZE)
+					print (readBuf)
+					if readBuf == b'':
+						break
 					self.request.sendall(readBuf)
 					readTotal += BUFFER_SIZE
 				
@@ -115,13 +119,14 @@ class Client:
 
 class TorrentInstance:
 	def __init__(self, info):
-		self.writeLock = threading.Lock
+		self.writeLock = threading.Lock()
 		self.info = info[0]
 		self.peers = info[1]
 
 	def run(self):
 		fname = 'file/' + self.info['name'] + '.'+ self.info['extension']
 		nchunks = ceil(self.info['size'] / self.info['chunksize'])
+		print (nchunks)
 		if os.access(fname,os.F_OK):
 			finfo = os.stat(fname)
 			if finfo.st_size == self.info['size']:
@@ -130,6 +135,7 @@ class TorrentInstance:
 				pass
 
 		self.fid = open(fname,'wb')
+		self.currentHash = [None]*nchunks
 
 		peerConnections = []
 		for i in self.peers:
@@ -151,6 +157,7 @@ class TorrentInstance:
 
 	def download(self,sock,startChunk):
 		current = startChunk
+		print (current)
 		while (True):
 			message = Message()
 			message.command = 'get'
@@ -158,37 +165,46 @@ class TorrentInstance:
 
 			sock.send(bytes(message.to_JSON(), 'UTF-8'))
 
-			in_buffer = []
+			in_buffer = ''
 
 			while (True):
 				reply = sock.recv(BUFFER_SIZE)
+				print (type(reply))
 				if reply == "":
 					continue
 
 				try:
-					reply = reply.strip().decode()
-					print (reply)
-					reply = json.loads(reply)
-					print (reply)
-					if reply['value'] == 'done':
+					r = reply.strip().decode()
+					r = json.loads(r)
+					if r['value'] == 'done':
 						break
+				
 				except:
-					in_buffer.append(reply)
+					#if type(reply) == str:
+					print(type(reply))
+					in_buffer = in_buffer + reply.decode()
+					#in_buffer = in_buffer.join(reply)
 
-			#with self.writeLock: #FIXME
-			self.fid.seek(self.info['chunksize'] * current)
-			for i in in_buffer:
-				if type(i) == str:
-					i = bytes(i,'UTF-8')
-				self.fid.write(i)
+			with self.writeLock:
+				in_buffer = bytes(in_buffer,'UTF-8')
+				self.fid.seek(self.info['chunksize'] * current)
+				self.fid.write(in_buffer)
 
-			++current
-			if current > ceil(self.info['size'] / self.info['chunksize']):
+			#update chunk hashes
+			h = hashlib.sha1()
+			h.update(in_buffer)
+			self.currentHash[current] = h.hexdigest()
+			
+			
+			current +=1
+			if current >= ceil(self.info['size'] / self.info['chunksize'])-1:
 				current = 0
-
-			#TODO: use hases instead
-			finfo = os.fstat(self.fid)
-			if finfo.st_size == self.info['size']:
+			
+			#If all chunks loaded
+			print (self.currentHash)
+			print (self.info['chunk_hashes'])
+			print (in_buffer)
+			if self.currentHash == self.info['chunk_hashes']:
 				break
 			
 		sock.close()
