@@ -4,6 +4,7 @@ import json
 import threading
 import os
 from math import ceil
+import hashlib
 
 BUFFER_SIZE = 1024
 
@@ -72,6 +73,9 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 				f.seek(info['chunksize']*args['startChunk'])
 				while readTotal != info['chunksize']:
 					readBuf = f.read(BUFFER_SIZE)
+					if readBuf == '': #end of file
+						break
+					readBuf = self.generatePrefix(readBuf) + readBuf
 					self.request.sendall(readBuf)
 					readTotal += BUFFER_SIZE
 				
@@ -79,7 +83,15 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 
 				response.statusCode = True
 				response.value = 'done'
-				self.request.sendall(bytes(response.to_JSON(), 'UTF-8'))
+				message = bytes(response.to_JSON(), 'UTF-8')
+				message = self.generatePrefix(message) + message
+				self.request.sendall(message)
+
+	def generatePrefix(self, message):
+		size = str(len(message))
+		size = ("0" * (4 - len(size))) + size
+		size = bytes(size, 'UTF-8')
+		return size
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -161,7 +173,8 @@ class TorrentInstance:
 			in_buffer = []
 
 			while (True):
-				reply = sock.recv(BUFFER_SIZE)
+				replyLength = int(sock.recv(4))
+				reply = sock.recv(replyLength)
 				if reply == "":
 					continue
 
@@ -182,7 +195,15 @@ class TorrentInstance:
 					i = str(i)
 				block += i
 
-			#TODO do hash check on block
+			h = hashlib.sha1()
+			h.update(block.encode('utf-8'))
+			blockHash = h.hexdigest()
+			print (blockHash)
+			
+			if blockHash != self.info['chunk_hashes'][current]:
+				print ("BAD BLOCK HASH")
+				continue	
+
 			with self.writeLock:
 				self.fid.seek(self.info['chunksize'] * current)
 				self.fid.write(bytes(block,'UTF-8'))
@@ -196,6 +217,7 @@ class TorrentInstance:
 			fname = 'file/' + self.info['name'] + '.'+ self.info['extension']
 			finfo = os.stat(fname)
 			if finfo.st_size == self.info['size']:
+				print ("Download Complete")
 				break
 			
 		sock.close()
