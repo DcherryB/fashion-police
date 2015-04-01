@@ -103,9 +103,13 @@ Generates the .fashion (torrent) info for a file
 	name: desired name for this torrent
 '''
 def generate_torrent_info (path, name):
+	try:
+		f = open(path, 'rb')
+	except:
+		print ("Unable to open file")
+		return None
 	fsize = os.path.getsize(path)
 	numchunks = math.ceil(fsize / CHUNK_SIZE)
-	f = open(path, 'rb')
 	hashes = []
 	fullhash = hashlib.sha1()
 

@@ -115,7 +115,7 @@ class Client:
 
 class TorrentInstance:
 	def __init__(self, info):
-		self.writeLock = threading.Lock
+		self.writeLock = threading.Lock()
 		self.info = info[0]
 		self.peers = info[1]
 
@@ -166,7 +166,7 @@ class TorrentInstance:
 					continue
 
 				try:
-					reply = reply.strip().decode()
+					reply = reply.decode()
 					print (reply)
 					reply = json.loads(reply)
 					print (reply)
@@ -175,19 +175,26 @@ class TorrentInstance:
 				except:
 					in_buffer.append(reply)
 
-			#with self.writeLock: #FIXME
-			self.fid.seek(self.info['chunksize'] * current)
+			
+			block = ""
 			for i in in_buffer:
-				if type(i) == str:
-					i = bytes(i,'UTF-8')
-				self.fid.write(i)
+				if type(i) != str:
+					i = str(i)
+				block += i
+
+			#TODO do hash check on block
+			with self.writeLock:
+				self.fid.seek(self.info['chunksize'] * current)
+				self.fid.write(bytes(block,'UTF-8'))
+				self.fid.flush()
 
 			++current
 			if current > ceil(self.info['size'] / self.info['chunksize']):
-				current = 0
+				current = 0			
 
-			#TODO: use hases instead
-			finfo = os.fstat(self.fid)
+			#TODO: do full file hash check
+			fname = 'file/' + self.info['name'] + '.'+ self.info['extension']
+			finfo = os.stat(fname)
 			if finfo.st_size == self.info['size']:
 				break
 			
