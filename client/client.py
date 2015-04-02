@@ -3,6 +3,7 @@ import socket
 import json
 import threading
 import os
+import hashlib
 from math import ceil
 import hashlib
 
@@ -42,13 +43,13 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 
 	def handle(self):
 		while True:
-			request = self.request.recvfrom(1024)
+			request = self.request.recvfrom(BUFFER_SIZE)
 			received = request[0].strip().decode()
 			addr = request[1]
-			if received == "":
+			if received == '':
 				break
 			
-			print ("{0} wrote: {1}".format(self.client_address[0], received))
+			#print ("{0} wrote: {1}".format(self.client_address[0], received))
 			
 			data = {}
 			command = ""
@@ -75,7 +76,7 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 					readBuf = f.read(BUFFER_SIZE)
 					if readBuf.decode() == "": #end of file
 						break
-					readBuf = self.generatePrefix(readBuf) + readBuf
+
 					self.request.sendall(readBuf)
 					readTotal += BUFFER_SIZE
 				
@@ -83,15 +84,7 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 
 				response.statusCode = True
 				response.value = 'done'
-				message = bytes(response.to_JSON(), 'UTF-8')
-				message = self.generatePrefix(message) + message
-				self.request.sendall(message)
-
-	def generatePrefix(self, message):
-		size = str(len(message))
-		size = ("0" * (4 - len(size))) + size
-		size = bytes(size, 'UTF-8')
-		return size
+				self.request.sendall(bytes(response.to_JSON(),'UTF-8'))
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -139,15 +132,17 @@ class TorrentInstance:
 	def run(self):
 		fname = 'file/' + self.info['name'] + '.'+ self.info['extension']
 		nchunks = ceil(self.info['size'] / self.info['chunksize'])
+		print (nchunks)
 		if os.access(fname,os.F_OK):
 			finfo = os.stat(fname)
 			if finfo.st_size == self.info['size']:
-				print ("File already downloaded")
-				return
+				#return
+				pass
 			else:
 				pass
 
 		self.fid = open(fname,'wb')
+		self.currentHash = [None]*nchunks
 
 		peerConnections = []
 		for i in self.peers:
@@ -177,56 +172,42 @@ class TorrentInstance:
 
 			sock.send(bytes(message.to_JSON(), 'UTF-8'))
 
-			in_buffer = []
+			in_buffer = ''
 
 			while (True):
-				replyLength = int(sock.recv(4))
-				reply = sock.recv(replyLength)
-				if reply == "":
+				reply = sock.recv(BUFFER_SIZE)
+
+				if reply == b'':
 					continue
 
 				try:
-					reply = reply.decode()
-					print (reply)
-					reply = json.loads(reply)
-					print (reply)
-					if reply['value'] == 'done':
+					r = reply.strip().decode()
+					r = json.loads(r)
+					if r['value'] == 'done':
 						break
+				
 				except:
-					in_buffer.append(reply)
-
-			
-			block = ""
-			for i in in_buffer:
-				if type(i) != str:
-					i = str(i)
-				block += i
-
-			h = hashlib.sha1()
-			h.update(block.encode('utf-8'))
-			blockHash = h.hexdigest()
-			print (blockHash)
-			
-			if blockHash != self.info['chunk_hashes'][current]:
-				print ("BAD BLOCK HASH")
-				continue	
+					in_buffer = in_buffer + reply.decode()
 
 			with self.writeLock:
+				in_buffer = bytes(in_buffer,'UTF-8')
 				self.fid.seek(self.info['chunksize'] * current)
-				self.fid.write(bytes(block,'UTF-8'))
-				self.fid.flush()
+				self.fid.write(in_buffer)
 
-			++current
-			if current > ceil(self.info['size'] / self.info['chunksize']):
-				current = 0			
-
-			#TODO: do full file hash check
-			fname = 'file/' + self.info['name'] + '.'+ self.info['extension']
-			finfo = os.stat(fname)
-			if finfo.st_size == self.info['size']:
-				print ("Download Complete")
-				break
+			#update chunk hashes
+			h = hashlib.sha1()
+			h.update(in_buffer)
+			self.currentHash[current] = h.hexdigest()		
 			
+			current +=1
+			if current >= ceil(self.info['size'] / self.info['chunksize'])-1:
+				current = 0
+			
+			#If all chunks loaded
+			if self.currentHash == self.info['chunk_hashes']:
+				break
+		
+		print ('Download Complete\n')
 		sock.close()
 		
 
