@@ -76,7 +76,7 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 					readBuf = f.read(BUFFER_SIZE)
 					if readBuf.decode() == "": #end of file
 						break
-
+					readBuf = self.generatePrefix(readBuf) + readBuf
 					self.request.sendall(readBuf)
 					readTotal += BUFFER_SIZE
 				
@@ -84,7 +84,15 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 
 				response.statusCode = True
 				response.value = 'done'
-				self.request.sendall(bytes(response.to_JSON(),'UTF-8'))
+				message = bytes(response.to_JSON(),'UTF-8')
+				message = self.generatePrefix(message) + message
+				self.request.sendall(message)
+
+	def generatePrefix(self, message):
+		size = str(len(message))
+		size = ("0" * (4 - len(size))) + size
+		size = bytes(size, 'UTF-8')
+		return size
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -136,8 +144,17 @@ class TorrentInstance:
 		if os.access(fname,os.F_OK):
 			finfo = os.stat(fname)
 			if finfo.st_size == self.info['size']:
-				#return
-				pass
+				h = hashlib.sha1()
+				f = open(fname)
+				while True:
+					chunk = f.read(BUFFER_SIZE)
+					if len(chunk) == 0:
+						break
+					h.update(chunk.encode('utf-8'))
+				fileHash = h.hexdigest()
+				if fileHash == self.info["full_hash"]:
+					print ("File already downloaded")
+					return
 			else:
 				pass
 
@@ -175,7 +192,8 @@ class TorrentInstance:
 			in_buffer = ''
 
 			while (True):
-				reply = sock.recv(BUFFER_SIZE)
+				replySize = int(sock.recv(4))
+				reply = sock.recv(replySize)
 
 				if reply == b'':
 					continue
@@ -209,6 +227,33 @@ class TorrentInstance:
 		
 		print ('Download Complete\n')
 		sock.close()
+
+		trackerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+		try:
+			# Connect to server
+			trackerSock.connect((self.client.serverIP, self.client.serverPort))
+		except:
+			print('Couldn\'t connect to server.')
+			return
+
+		message = Message()
+		
+		message.command = "upload"
+		message.args = {}
+		message.args["name"] = self.info["name"]
+		message.args["ip"] = self.client.serverIP
+		message.args["port"] = self.client.serverPort
+
+		trackerSock.sendall(bytes(message.to_JSON(), 'UTF-8'))
+
+		received = trackerSock.recv(BUFFER_SIZE)
+		response = json.loads(received.decode())
+				
+		if response["statusCode"] == True:
+			print ("Client's address successfully sent to tracker for seeding")
+		else:
+			print ("Something went horribly wrong when sending address to tracker")
 		
 
 class TorrentDownloadRequest:

@@ -59,8 +59,7 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 				response = ServerTCPHandler.tracker.peer(args)
 
 			elif command == 'upload':
-				pass #not sure how to get correct ip/port information in here
-
+				response = ServerTCPHandler.tracker.upload(args["name"], (args["ip"], args["port"]))
 			else:
 				response.statusCode = False
 				response.value = "Unknown Command"
