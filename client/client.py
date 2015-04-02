@@ -190,7 +190,7 @@ class TorrentInstance:
 
 		#fileinfo.create_file_info(fname,self.info['name'])
 
-		self.self.sendAddressToTracker()
+		self.sendAddressToTracker()
 
 		
 
@@ -261,10 +261,8 @@ class TorrentInstance:
 		message = Message()
 		
 		message.command = "upload"
-		message.args = {}
-		message.args["name"] = self.info["name"]
-		message.args["ip"] = self.client.host
-		message.args["port"] = self.client.port
+		addr = (self.client.host, self.client.port)
+		message.args = (self.info, addr)
 
 		trackerSock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 
