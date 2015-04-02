@@ -61,3 +61,16 @@ def runClient1():
 @hosts("slice352.pcvm3-4.instageni.rnet.missouri.edu")
 def runClient2():
 	run('python3 client/main.py -I 10.12.1.34')
+
+@hosts("slice352.pcvm3-7.instageni.nps.edu")
+def runClient4():
+        run('python3 client/main.py -I 10.12.1.34')
+
+@hosts("slice352.pcvm3-11.genirack.nyu.edu")
+def runClient3():
+        run('python3 client/main.py -I 10.12.1.34')
+
+@hosts(["slice352.pcvm1-1.instageni.iu.edu","slice352.pcvm3-4.instageni.rnet.missouri.edu","slice352.pcvm3-11.genirack.nyu.edu"])
+@parallel
+def prepDemo():
+	put('testFile2.html','file/')

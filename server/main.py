@@ -46,8 +46,10 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 				response.value = "invalid"
 			
 			if command == "post":
-				response = ServerTCPHandler.tracker.post(args[0])
-				ServerTCPHandler.tracker.upload(args[0]["name"], args[1])
+				r = ServerTCPHandler.tracker.post(args[0])
+				response = ServerTCPHandler.tracker.upload(args[0], args[1])
+				if response.statusCode == False:
+					response = r
 
 			elif command == 'query':
 				response = ServerTCPHandler.tracker.query(args)
@@ -59,7 +61,7 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 				response = ServerTCPHandler.tracker.peer(args)
 
 			elif command == 'upload':
-				pass #not sure how to get correct ip/port information in here
+				response = ServerTCPHandler.tracker.upload(args[0]["name"], args[1])
 
 			else:
 				response.statusCode = False

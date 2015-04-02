@@ -150,7 +150,7 @@ def main():
 			response = json.loads(received.decode())
 			if response["statusCode"] == True:
 				print ("Torrent successfully recieved from tracker")
-				print (response['value'])
+				#print (response['value'])
 
 				if client.addTorrent(response['value']):
 					print ("File download started")

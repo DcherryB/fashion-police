@@ -93,10 +93,10 @@ class Tracker:
 		return response
 		
 	def upload(self, args, addr):
-		name = args
+		info = args
 		for key in self.torrents:
 			t = self.torrents[key]
-			if t.info["name"] == name:
+			if t.info["name"] == info['name'] and t.info['full_hash'] == info['full_hash']:
 				newPeer = {}
 				newPeer["ip"] = addr[0]
 				newPeer["port"] = addr[1]
