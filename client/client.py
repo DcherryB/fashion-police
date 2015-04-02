@@ -154,6 +154,7 @@ class TorrentInstance:
 				fileHash = h.hexdigest()
 				if fileHash == self.info["full_hash"]:
 					print ("File already downloaded")
+					self.sendAddressToTracker()
 					return
 			else:
 				pass
@@ -189,32 +190,7 @@ class TorrentInstance:
 
 		#fileinfo.create_file_info(fname,self.info['name'])
 
-		trackerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-		try:
-			# Connect to server
-			trackerSock.connect((self.client.serverIP, self.client.serverPort))
-		except:
-			print('Couldn\'t connect to server.')
-			return
-
-		message = Message()
-
-		message.command = "upload"
-		message.args = {}
-		message.args["name"] = self.info["name"]
-		message.args["ip"] = self.client.serverIP
-		message.args["port"] = self.client.serverPort
-
-		trackerSock.sendall(bytes(message.to_JSON(), 'UTF-8'))
-
-		received = trackerSock.recv(BUFFER_SIZE)
-		response = json.loads(received.decode())
-
-		if response["statusCode"] == True:
-			print ("Client's address successfully sent to tracker for seeding")
-		else:
-			print ("Something went horribly wrong when sending address to tracker")
+		self.sendAddressToTracker()
 
 		
 
@@ -273,6 +249,34 @@ class TorrentInstance:
 				break
 		
 		sock.close()
+
+	def sendAddressToTracker(self):
+		trackerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+		try:
+			# Connect to server
+			trackerSock.connect((self.client.serverIP, self.client.serverPort))
+		except:
+			print('Couldn\'t connect to server.')
+			return
+
+		message = Message()
+		
+		message.command = "upload"
+		addr = (self.client.host, self.client.port)
+		message.args = (self.info, addr)
+
+		trackerSock.sendall(bytes(message.to_JSON(), 'UTF-8'))
+
+		recieved = b''
+		while recieved == b'':
+			received = trackerSock.recv(BUFFER_SIZE)
+		response = json.loads(received.decode())
+				
+		if response["statusCode"] == True:
+			print ("Client's address successfully sent to tracker for seeding")
+		else:
+			print ("Something went horribly wrong when sending address to tracker")
 		
 
 class TorrentDownloadRequest:

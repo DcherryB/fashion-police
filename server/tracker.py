@@ -94,18 +94,33 @@ class Tracker:
 		
 	def upload(self, args, addr):
 		info = args
+		torrent = None
 		for key in self.torrents:
 			t = self.torrents[key]
 			if t.info["name"] == info['name'] and t.info['full_hash'] == info['full_hash']:
-				newPeer = {}
-				newPeer["ip"] = addr[0]
-				newPeer["port"] = addr[1]
+				torrent = t
+				break
+				
+		if torrent != None:
+			newPeer = {}
+			newPeer["ip"] = addr[0]
+			newPeer["port"] = addr[1]
+
+			exists = False
+			for peer in torrent.peers:
+				ip = peer["ip"]
+				port = peer["port"]
+				if ip == newPeer["ip"] and port == newPeer["port"]:
+					exists = True
+					break
+			
+			if exists == False:
 				t.peers.append(newPeer)
 
-				response = Response()
-				response.statusCode = True
-				return response
-		
+			response = Response()
+			response.statusCode = True
+			return response
+
 		response = Response()
 		response.statusCode = False
 		return response
