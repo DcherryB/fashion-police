@@ -73,4 +73,5 @@ def runClient3():
 @hosts(["slice352.pcvm1-1.instageni.iu.edu","slice352.pcvm3-4.instageni.rnet.missouri.edu","slice352.pcvm3-11.genirack.nyu.edu"])
 @parallel
 def prepDemo():
+	put('testFile.html','file/')
 	put('testFile2.html','file/')

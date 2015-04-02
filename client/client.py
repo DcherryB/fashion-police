@@ -190,6 +190,8 @@ class TorrentInstance:
 
 		#fileinfo.create_file_info(fname,self.info['name'])
 
+		self.self.sendAddressToTracker()
+
 		
 
 	def download(self,sock,startChunk):
@@ -208,7 +210,12 @@ class TorrentInstance:
 			in_buffer = ''
 
 			while (True):
-				replySize = int(sock.recv(4))
+				replySize = sock.recv(4)
+				try:
+					replySize = int(replySize)
+				except:
+					continue
+
 				reply = sock.recv(replySize)
 
 				if reply == b'':
@@ -240,8 +247,6 @@ class TorrentInstance:
 				break
 		
 		sock.close()
-
-		self.sendAddressToTracker()
 
 	def sendAddressToTracker(self):
 		trackerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
