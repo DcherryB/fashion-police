@@ -154,6 +154,7 @@ class TorrentInstance:
 				fileHash = h.hexdigest()
 				if fileHash == self.info["full_hash"]:
 					print ("File already downloaded")
+					self.sendAddressToTracker()
 					return
 			else:
 				pass
@@ -228,6 +229,9 @@ class TorrentInstance:
 		print ('Download Complete\n')
 		sock.close()
 
+		self.sendAddressToTracker()
+
+	def sendAddressToTracker(self):
 		trackerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 		try:
@@ -242,8 +246,8 @@ class TorrentInstance:
 		message.command = "upload"
 		message.args = {}
 		message.args["name"] = self.info["name"]
-		message.args["ip"] = self.client.serverIP
-		message.args["port"] = self.client.serverPort
+		message.args["ip"] = self.client.host
+		message.args["port"] = self.client.port
 
 		trackerSock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 
