@@ -73,7 +73,7 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 				f.seek(info['chunksize']*args['startChunk'])
 				while readTotal != info['chunksize']:
 					readBuf = f.read(BUFFER_SIZE)
-					if readBuf == '': #end of file
+					if readBuf.decode() == "": #end of file
 						break
 					readBuf = self.generatePrefix(readBuf) + readBuf
 					self.request.sendall(readBuf)
@@ -98,15 +98,19 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 	pass
 
 class Client:
-	def __init__(self, port):
-		host = socket.gethostbyname(socket.gethostname())
+	def __init__(self, port, serverIP, serverPort):
+		self.host = socket.gethostbyname(socket.gethostname())
+		self.port = port
+
+		self.serverIP = serverIP
+		self.serverPort = serverPort
 
 		# Create the server, binding to HOST:PORT
-		server = ThreadedTCPServer((host, port), ClientTCPHandler)
+		server = ThreadedTCPServer((self.host, self.port), ClientTCPHandler)
 
 		# Activate the server; this will keep running until you
 		# interrupt the program with Ctrl-C
-		print ('Client running on ' + str(host) + ':' + str(port))
+		print ('Client running on ' + str(self.host) + ':' + str(self.port))
 		thread = threading.Thread(target=server.serve_forever)
 		thread.daemon = True
 		thread.start()
@@ -115,10 +119,10 @@ class Client:
 
 	def addTorrent(self, info):
 		for torrent in self.torrents:
-			if info["name"] == torrent.info["name"]:
+			if info[0]["name"] == torrent.info["name"]:
 				return False
 
-		newTorrent = TorrentInstance(info)
+		newTorrent = TorrentInstance(info, self)
 		self.torrents.append(newTorrent)
 		thread = threading.Thread(target=newTorrent.run)
 		thread.daemon = True
@@ -126,10 +130,11 @@ class Client:
 		return True
 
 class TorrentInstance:
-	def __init__(self, info):
+	def __init__(self, info, client):
 		self.writeLock = threading.Lock()
 		self.info = info[0]
 		self.peers = info[1]
+		self.client = client
 
 	def run(self):
 		fname = 'file/' + self.info['name'] + '.'+ self.info['extension']
@@ -137,6 +142,7 @@ class TorrentInstance:
 		if os.access(fname,os.F_OK):
 			finfo = os.stat(fname)
 			if finfo.st_size == self.info['size']:
+				print ("File already downloaded")
 				return
 			else:
 				pass
@@ -150,6 +156,7 @@ class TorrentInstance:
 				sock.connect((i['ip'],i['port']))
 				peerConnections.append(sock)
 			except:
+				print ("Unable to connect to " + i['ip'] + ":" + str(i['port']))
 				pass
 
 		if not peerConnections:

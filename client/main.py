@@ -39,7 +39,7 @@ def main():
 		print('Couldn\'t connect to server.')
 		return
 
-	client = Client(args.port)
+	client = Client(args.port, args.serverIP, args.serverPort)
 	clientAddr = (socket.gethostbyname(socket.gethostname()),args.port)
 
 	while(True):
@@ -151,10 +151,8 @@ def main():
 			if response["statusCode"] == True:
 				print ("Torrent successfully recieved from tracker")
 				print (response['value'])
-
-				if client.addTorrent(response['value']):
-					print ("File download started")
-				else:
+				print ("Starting file download")
+				if client.addTorrent(response['value']) == False:
 					print ("Unable to start file download, identical torrent already in client")
 			else:
 				print ("Unable to find torrent on tracker")
