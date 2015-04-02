@@ -5,6 +5,7 @@ import threading
 import os
 import hashlib
 from math import ceil
+import hashlib
 
 BUFFER_SIZE = 1024
 
@@ -73,9 +74,11 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 				f.seek(info['chunksize']*args['startChunk'])
 				while readTotal != info['chunksize']:
 					readBuf = f.read(BUFFER_SIZE)
+
 					print (readBuf)
 					if readBuf == b'':
 						break
+
 					self.request.sendall(readBuf)
 					readTotal += BUFFER_SIZE
 				
@@ -83,7 +86,7 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 
 				response.statusCode = True
 				response.value = 'done'
-				self.request.sendall(bytes(response.to_JSON(), 'UTF-8'))
+				self.request.sendall(response)
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -169,7 +172,7 @@ class TorrentInstance:
 
 			while (True):
 				reply = sock.recv(BUFFER_SIZE)
-				print (type(reply))
+
 				if reply == "":
 					continue
 
@@ -180,10 +183,8 @@ class TorrentInstance:
 						break
 				
 				except:
-					#if type(reply) == str:
 					print(type(reply))
 					in_buffer = in_buffer + reply.decode()
-					#in_buffer = in_buffer.join(reply)
 
 			with self.writeLock:
 				in_buffer = bytes(in_buffer,'UTF-8')

@@ -72,30 +72,31 @@ def main():
 				name = input(":")
 
 			info = fileinfo.generate_torrent_info(path, name)
-			print(info)
+			if info != None:
+				print(info)
 			
-			message  = Message()
-			message.command = "post"
-			message.args = (info,clientAddr)
+				message  = Message()
+				message.command = "post"
+				message.args = (info,clientAddr)
 		
-			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
+				sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 		
-			#Receive data from the server
-			received = sock.recv(BUF_SIZE)
+				#Receive data from the server
+				received = sock.recv(BUF_SIZE)
 		
-			#print stuff
-			print ("Sent:     {}".format(message.to_JSON()))
-			print ("Received: {}".format(received))
+				#print stuff
+				print ("Sent:     {}".format(message.to_JSON()))
+				print ("Received: {}".format(received))
 		
-			response = json.loads(received.decode())
-			if response["statusCode"] == True:
-				print ("Torrent successfully created and sent to tracker")
+				response = json.loads(received.decode())
+				if response["statusCode"] == True:
+					print ("Torrent successfully created and sent to tracker")
 		
-				torrent = fileinfo.Torrent(info)
-				torrent.save_info()
-				torrent.save_status()
-			else:
-				print ("Torrent unsuccessfully sent to tracker, reason: " + response["value"])
+					torrent = fileinfo.Torrent(info)
+					torrent.save_info()
+					torrent.save_status()
+				else:
+					print ("Torrent unsuccessfully sent to tracker, reason: " + response["value"])
 	
 		elif val == 1:
 			message  = Message()
