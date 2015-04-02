@@ -61,7 +61,7 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 				response = ServerTCPHandler.tracker.peer(args)
 
 			elif command == 'upload':
-				response = ServerTCPHandler.tracker.upload(args[0]["name"], args[1])
+				response = ServerTCPHandler.tracker.upload(args[0], args[1])
 
 			else:
 				response.statusCode = False
