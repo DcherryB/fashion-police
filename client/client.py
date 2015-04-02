@@ -46,10 +46,10 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 			request = self.request.recvfrom(BUFFER_SIZE)
 			received = request[0].strip().decode()
 			addr = request[1]
-			if received == b'':
+			if received == '':
 				break
 			
-			print ("{0} wrote: {1}".format(self.client_address[0], received))
+			#print ("{0} wrote: {1}".format(self.client_address[0], received))
 			
 			data = {}
 			command = ""
@@ -74,9 +74,7 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 				f.seek(info['chunksize']*args['startChunk'])
 				while readTotal != info['chunksize']:
 					readBuf = f.read(BUFFER_SIZE)
-
-					print (readBuf)
-					if readBuf == b'':
+					if readBuf == '':
 						break
 
 					self.request.sendall(readBuf)
@@ -86,7 +84,7 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 
 				response.statusCode = True
 				response.value = 'done'
-				self.request.sendall(response)
+				self.request.sendall(bytes(response.to_JSON(),'UTF-8'))
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -133,7 +131,8 @@ class TorrentInstance:
 		if os.access(fname,os.F_OK):
 			finfo = os.stat(fname)
 			if finfo.st_size == self.info['size']:
-				return
+				#return
+				pass
 			else:
 				pass
 
@@ -160,7 +159,6 @@ class TorrentInstance:
 
 	def download(self,sock,startChunk):
 		current = startChunk
-		print (current)
 		while (True):
 			message = Message()
 			message.command = 'get'
@@ -173,7 +171,7 @@ class TorrentInstance:
 			while (True):
 				reply = sock.recv(BUFFER_SIZE)
 
-				if reply == "":
+				if reply == b'':
 					continue
 
 				try:
@@ -183,7 +181,6 @@ class TorrentInstance:
 						break
 				
 				except:
-					print(type(reply))
 					in_buffer = in_buffer + reply.decode()
 
 			with self.writeLock:
@@ -194,20 +191,17 @@ class TorrentInstance:
 			#update chunk hashes
 			h = hashlib.sha1()
 			h.update(in_buffer)
-			self.currentHash[current] = h.hexdigest()
-			
+			self.currentHash[current] = h.hexdigest()		
 			
 			current +=1
 			if current >= ceil(self.info['size'] / self.info['chunksize'])-1:
 				current = 0
 			
 			#If all chunks loaded
-			print (self.currentHash)
-			print (self.info['chunk_hashes'])
-			print (in_buffer)
 			if self.currentHash == self.info['chunk_hashes']:
 				break
-			
+		
+		print ('Download Complete\n')
 		sock.close()
 		
 
