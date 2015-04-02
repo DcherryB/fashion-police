@@ -93,11 +93,11 @@ class Tracker:
 		return response
 		
 	def upload(self, args, addr):
-		name = args
+		info = args
 		torrent = None
 		for key in self.torrents:
 			t = self.torrents[key]
-			if t.info["name"] == name:
+			if t.info["name"] == info['name'] and t.info['full_hash'] == info['full_hash']:
 				torrent = t
 				break
 				

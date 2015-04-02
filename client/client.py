@@ -175,15 +175,30 @@ class TorrentInstance:
 		if not peerConnections:
 			print ("No peers available. Download failed.")#FIXME
 			return
-
+		
+		threadList = []
 		for i in range(len(peerConnections)):
 			startChunk = ceil(nchunks/len(peerConnections))*i
 			thread = threading.Thread(target = self.download, args = [peerConnections[i],startChunk])
+			threadList.append(thread)
 			thread.start()
+
+		for i in threadList:
+			i.join()
+
+		print ('Download Complete')
+
+		#fileinfo.create_file_info(fname,self.info['name'])
+
+		
 
 	def download(self,sock,startChunk):
 		current = startChunk
 		while (True):
+
+			if current >= ceil(self.info['size'] / self.info['chunksize'])-1:
+				current = 0
+
 			message = Message()
 			message.command = 'get'
 			message.args = TorrentDownloadRequest(self.info,current)
@@ -219,14 +234,11 @@ class TorrentInstance:
 			self.currentHash[current] = h.hexdigest()		
 			
 			current +=1
-			if current >= ceil(self.info['size'] / self.info['chunksize'])-1:
-				current = 0
 			
 			#If all chunks loaded
 			if self.currentHash == self.info['chunk_hashes']:
 				break
 		
-		print ('Download Complete\n')
 		sock.close()
 
 		self.sendAddressToTracker()
