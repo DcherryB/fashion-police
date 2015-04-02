@@ -74,7 +74,8 @@ class ClientTCPHandler(socketserver.BaseRequestHandler):
 				f.seek(info['chunksize']*args['startChunk'])
 				while readTotal != info['chunksize']:
 					readBuf = f.read(BUFFER_SIZE)
-					if readBuf.decode() == "": #end of file
+					print (readBuf)
+					if readBuf == b"": #end of file
 						break
 					readBuf = self.generatePrefix(readBuf) + readBuf
 					self.request.sendall(readBuf)
@@ -136,6 +137,8 @@ class TorrentInstance:
 		self.info = info[0]
 		self.peers = info[1]
 		self.client = client
+		self.chunk_hashes = self.info['chunk_hashes']
+		self.info['chunk_hashes'] = []
 
 	def run(self):
 		fname = 'file/' + self.info['name'] + '.'+ self.info['extension']
@@ -216,36 +219,42 @@ class TorrentInstance:
 				except:
 					continue
 
+				reply = sock.recv(replySize,socket.MSG_PEEK)
+
+				while len(reply) < replySize:
+					reply = sock.recv(replySize,socket.MSG_PEEK)
+
 				reply = sock.recv(replySize)
 
-				if reply == b'':
-					continue
-
-				print (reply)
-
 				try:
-					r = reply.strip().decode()
+					r = reply.decode()
 					r = json.loads(r)
 					if r['value'] == 'done':
 						break
-				
 				except:
+					#try:
 					in_buffer = in_buffer + reply.decode()
-
-			with self.writeLock:
-				in_buffer = bytes(in_buffer,'UTF-8')
-				self.fid.seek(self.info['chunksize'] * current)
-				self.fid.write(in_buffer)
-
-			#update chunk hashes
+					#except:
+					#	break
+			
+			in_buffer = bytes(in_buffer,'UTF-8')
 			h = hashlib.sha1()
 			h.update(in_buffer)
-			self.currentHash[current] = h.hexdigest()		
-			
+			self.currentHash[current] = h.hexdigest()
+
+			print(in_buffer)
+			print(self.currentHash[current])
+			print(self.chunk_hashes[current])
+
+			if self.currentHash[current] == self.chunk_hashes[current]:
+				with self.writeLock:
+					self.fid.seek(self.info['chunksize'] * current)
+					self.fid.write(in_buffer)
+
 			current +=1
 			
 			#If all chunks loaded
-			if self.currentHash == self.info['chunk_hashes']:
+			if self.currentHash == self.chunk_hashes:
 				break
 		
 		sock.close()

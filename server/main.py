@@ -19,9 +19,10 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 
 	def handle(self):
 		while True:
-			received = (self.request.recv(1024).strip()).decode()
-			if received == "":
-				break
+			received = self.request.recv(1024).strip().decode()
+
+			if received == '':
+				continue
 
 			print ("{0} wrote: {1}".format(self.client_address[0], received))
 			
@@ -44,6 +45,32 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 				print ("Invalid Message Format")
 				response.statusCode = False
 				response.value = "invalid"
+
+			if command == 'header':
+				in_bytes = args
+
+				response.statusCode = True
+				self.request.sendall(bytes(response.to_JSON(), 'UTF-8'))
+
+				received = ''
+
+				while(len(received) < args):
+					r = self.request.recv(1024)
+					received += r.decode()
+
+				try:
+					data = json.loads(received)
+				except:
+					print('NO NO NO')
+
+				try:
+					data = json.loads(received)
+					command = data['command']
+					args = data['args']
+				except:
+					print ("Invalid Message Format")
+					response.statusCode = False
+					response.value = "invalid"
 			
 			if command == "post":
 				r = ServerTCPHandler.tracker.post(args[0])
@@ -56,6 +83,22 @@ class ServerTCPHandler(socketserver.BaseRequestHandler):
 
 			elif command == 'get':
 				response = ServerTCPHandler.tracker.get(args)
+				
+				header = Response()
+				header.statuscode = True
+				header.value = len(bytes(response.to_JSON(),'UTF-8'))
+
+				self.request.sendall(bytes(header.to_JSON(),'UTF-8'))
+
+				reply = b''
+				while reply == b'':
+					reply = self.request.recv(1024)
+
+				print (reply)
+
+				reply = json.loads(reply.strip().decode())
+				if reply['statuscode'] == False:
+					continue
 
 			elif command == 'peer':
 				response = ServerTCPHandler.tracker.peer(args)

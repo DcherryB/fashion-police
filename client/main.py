@@ -78,11 +78,27 @@ def main():
 				message  = Message()
 				message.command = "post"
 				message.args = (info,clientAddr)
+
+				headerMessage = Message()
+				headerMessage.command = 'header'
+				headerMessage.args = len(bytes(message.to_JSON(),'UTF-8'))
+
+				sock.sendall(bytes(headerMessage.to_JSON(),'UTF-8'))
+
+				reply = ''
+				while reply == '':
+					reply = sock.recv(BUF_SIZE).strip().decode()
+
+				reply = json.loads(reply)
+				if reply['statusCode'] == False:
+					continue
 		
-				sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
+				sock.sendall(bytes(message.to_JSON(),'UTF-8'))
 		
 				#Receive data from the server
-				received = sock.recv(BUF_SIZE)
+				received = b''
+				while received == b'':
+					received = sock.recv(BUF_SIZE)
 		
 				#print stuff
 				print ("Sent:     {}".format(message.to_JSON()))
@@ -144,10 +160,26 @@ def main():
 
 			sock.sendall(bytes(message.to_JSON(), 'UTF-8'))
 
-			#Receive data from the server
-			received = sock.recv(BUF_SIZE)
+			reply = b''
+			while reply == b'':
+				reply = sock.recv(BUF_SIZE)
+			print (reply)
+			replyvals = json.loads(reply.strip().decode())
 
-			response = json.loads(received.decode())
+			if replyvals['statuscode'] == True:
+				inBytes = replyvals['value']
+				print(inBytes)
+			else:
+				continue
+
+			sock.sendall(reply)
+
+			received = ''
+			#Receive data from the server
+			while len(received) < inBytes:
+				received += sock.recv(BUF_SIZE).decode()
+
+			response = json.loads(received)
 			if response["statusCode"] == True:
 				print ("Torrent successfully recieved from tracker")
 
