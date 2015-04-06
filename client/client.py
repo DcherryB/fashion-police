@@ -201,8 +201,11 @@ class TorrentInstance:
 		current = startChunk
 		while (True):
 
-			if current >= ceil(self.info['size'] / self.info['chunksize'])-1:
+			if current > ceil(self.info['size'] / self.info['chunksize'])-1:
 				current = 0
+
+			if self.currentHash[current] == self.chunk_hashes[current]:
+				continue
 
 			message = Message()
 			message.command = 'get'
@@ -210,7 +213,7 @@ class TorrentInstance:
 
 			sock.send(bytes(message.to_JSON(), 'UTF-8'))
 
-			in_buffer = ''
+			in_buffer = b''
 
 			while (True):
 				replySize = sock.recv(4)
@@ -233,23 +236,24 @@ class TorrentInstance:
 						break
 				except:
 					#try:
-					in_buffer = in_buffer + reply.decode()
+					in_buffer = in_buffer + reply
 					#except:
 					#	break
 			
-			in_buffer = bytes(in_buffer,'UTF-8')
+			#in_buffer = bytes(in_buffer,'UTF-8')
 			h = hashlib.sha1()
 			h.update(in_buffer)
 			self.currentHash[current] = h.hexdigest()
 
-			print(in_buffer)
-			print(self.currentHash[current])
-			print(self.chunk_hashes[current])
+			#print(in_buffer)
 
 			if self.currentHash[current] == self.chunk_hashes[current]:
 				with self.writeLock:
 					self.fid.seek(self.info['chunksize'] * current)
 					self.fid.write(in_buffer)
+
+			else:
+				print (self.currentHash)[current]
 
 			current +=1
 			
